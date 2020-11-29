@@ -3,7 +3,7 @@
   <entry>
     <title>JOIN语句是怎么执行的</title>
     <url>/2020/11/29/JOIN%E8%AF%AD%E5%8F%A5%E6%98%AF%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C%E7%9A%84/</url>
-    <content><![CDATA[<p>JOIN语句的执行流程：</p>
+    <content><![CDATA[<p>JOIN语句执行流程：</p>
 <a id="more"></a>
 
 <p><img src="/2020/11/29/JOIN%E8%AF%AD%E5%8F%A5%E6%98%AF%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C%E7%9A%84/JOIN%E8%AF%AD%E5%8F%A5%E6%98%AF%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C%E7%9A%84.png" alt="JOIN语句是怎么执行的"></p>

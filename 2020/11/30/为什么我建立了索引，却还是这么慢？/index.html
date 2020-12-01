@@ -23,15 +23,15 @@
     var NexT = window.NexT || {};
     var CONFIG = {"hostname":"www.alualu.cn","root":"/","images":"/images","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
   </script>
-<meta name="description" content="针对这种疑问，有以下三种情况：  mysql优化器放弃使用索引。 mysql优化器选错了索引 sql写的不对，导致mysql扫描了大量不需要的行，然后放弃返回这些行。">
+<meta name="description" content="针对这种疑问，有以下两种情况：  mysql优化器放弃使用索引。 查询写的不对，导致mysql扫描了大量不需要的行，然后放弃返回这些行。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="为什么我建立了索引，却还是这么慢？">
 <meta property="og:url" content="http://www.alualu.cn/2020/11/30/%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E5%BB%BA%E7%AB%8B%E4%BA%86%E7%B4%A2%E5%BC%95%EF%BC%8C%E5%8D%B4%E8%BF%98%E6%98%AF%E8%BF%99%E4%B9%88%E6%85%A2%EF%BC%9F/index.html">
 <meta property="og:site_name" content="AluAlu">
-<meta property="og:description" content="针对这种疑问，有以下三种情况：  mysql优化器放弃使用索引。 mysql优化器选错了索引 sql写的不对，导致mysql扫描了大量不需要的行，然后放弃返回这些行。">
+<meta property="og:description" content="针对这种疑问，有以下两种情况：  mysql优化器放弃使用索引。 查询写的不对，导致mysql扫描了大量不需要的行，然后放弃返回这些行。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-11-30T13:39:55.000Z">
-<meta property="article:modified_time" content="2020-12-01T04:49:27.943Z">
+<meta property="article:modified_time" content="2020-12-01T15:09:39.734Z">
 <meta property="article:author" content="AluAlu">
 <meta property="article:tag" content="mysql">
 <meta name="twitter:card" content="summary">
@@ -186,7 +186,7 @@
 
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
@@ -199,6 +199,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-6"><a class="nav-link" href="#mysql%E4%BC%98%E5%8C%96%E5%99%A8%E6%94%BE%E5%BC%83%E4%BD%BF%E7%94%A8%E7%B4%A2%E5%BC%95"><span class="nav-number">1.</span> <span class="nav-text">mysql优化器放弃使用索引</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#sql%E5%86%99%E7%9A%84%E4%B8%8D%E5%AF%B9%EF%BC%8C%E5%AF%BC%E8%87%B4mysql%E6%89%AB%E6%8F%8F%E4%BA%86%E5%A4%A7%E9%87%8F%E4%B8%8D%E9%9C%80%E8%A6%81%E7%9A%84%E8%A1%8C%EF%BC%8C%E7%84%B6%E5%90%8E%E6%94%BE%E5%BC%83%E8%BF%94%E5%9B%9E%E8%BF%99%E4%BA%9B%E8%A1%8C%E3%80%82"><span class="nav-number">2.</span> <span class="nav-text">sql写的不对，导致mysql扫描了大量不需要的行，然后放弃返回这些行。</span></a></li></ol></div>
         </section>
         <!--/noindex-->
 
@@ -305,7 +306,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-12-01 12:49:27" itemprop="dateModified" datetime="2020-12-01T12:49:27+08:00">2020-12-01</time>
+        <time title="修改时间：2020-12-01 23:09:39" itemprop="dateModified" datetime="2020-12-01T23:09:39+08:00">2020-12-01</time>
       </span>
 
   
@@ -339,17 +340,15 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p>针对这种疑问，有以下三种情况：</p>
+        <p>针对这种疑问，有以下两种情况：</p>
 <ol>
-<li>mysql优化器放弃使用索引。</li>
-<li>mysql优化器选错了索引</li>
-<li>sql写的不对，导致mysql扫描了大量不需要的行，然后放弃返回这些行。</li>
+<li><strong>mysql优化器放弃使用索引。</strong></li>
+<li><strong>查询写的不对，导致mysql扫描了大量不需要的行，然后放弃返回这些行。</strong></li>
 </ol>
 <a id="more"></a>
 
-<ul>
-<li><p>mysql优化器放弃使用索引</p>
-<ul>
+<hr>
+<h6 id="mysql优化器放弃使用索引"><a href="#mysql优化器放弃使用索引" class="headerlink" title="mysql优化器放弃使用索引"></a>mysql优化器放弃使用索引</h6><ul>
 <li>条件字段的函数操作</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">-- 表t中 a，cdate字段均存在普通索引。</span><br><span class="line">-- 执行如下sql：</span><br><span class="line">select count(*) from t where month(cdate) &#x3D; &#39;7&#39;;</span><br><span class="line">select * from t where a+1 &#x3D; 1000;</span><br><span class="line">-- 结果：explain显示，type为ALL走了全表扫描</span><br><span class="line">-- 结论：mysql优化器认为在索引字段上加函数会破坏索引查询的有序性，从而导致mysql查询时放弃索引。</span><br></pre></td></tr></table></figure>
@@ -372,10 +371,13 @@
 <ul>
 <li>前缀模糊的查询</li>
 </ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">-- 表t中 a字段存在普通索引</span><br><span class="line">select * from t where a like &#39;%reg&#39;;</span><br><span class="line">select * from t where a like &#39;%reg%&#39;;</span><br><span class="line">select * from t where a like &#39;reg%&#39;;</span><br><span class="line">-- 结果：explain结果显示，表t的TYPE为ALL走了全表扫描</span><br><span class="line">-- 结论：mysql优化器在执行此类查询时，不清楚关键字reg是从索引键值的第几个位置开始，所以会根据数据量大小来选择全索引扫描或者全表扫描。</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">-- 表t中 a字段存在普通索引</span><br><span class="line">select * from t where a like &#39;%reg&#39;; -- 一定走全表扫描</span><br><span class="line">select * from t where a like &#39;%reg%&#39;; -- 一定走全表扫描</span><br><span class="line">select * from t where a like &#39;reg%&#39;; -- 不一定走全表扫描，mysql会将（全表扫描）的查询消耗和（索引查询+回表）的查询消耗作比较，从而选择出更优的执行计划。</span><br><span class="line">-- 结果：explain结果显示，表t的TYPE为ALL走了全表扫描</span><br><span class="line">-- 结论：mysql优化器在执行此类查询时，不清楚关键字reg是从索引键值的第几个位置开始，所以会根据数据量大小来选择全索引扫描或者全表扫描。</span><br></pre></td></tr></table></figure>
 
-</li>
-</ul>
+<hr>
+<h6 id="sql写的不对，导致mysql扫描了大量不需要的行，然后放弃返回这些行。"><a href="#sql写的不对，导致mysql扫描了大量不需要的行，然后放弃返回这些行。" class="headerlink" title="sql写的不对，导致mysql扫描了大量不需要的行，然后放弃返回这些行。"></a>sql写的不对，导致mysql扫描了大量不需要的行，然后放弃返回这些行。</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">-- 如下业务场景，表t中，存在id,a,b,c,d,e,f字段，有300万行数据，现在要将每一列的值导出至txt文件。</span><br><span class="line">-- A同学考虑到了两个问题：</span><br><span class="line">-- 1.如果没有索引，将会全表扫描，性能较差，也不能建立union_index(a,b,c,d,e,f)代价太高。</span><br><span class="line">-- 综合考虑后，他选择了列值区分度最高的b字段。</span><br><span class="line">-- 2.300万数据一次性加载到服务端，可能会导致服务端发生OOM，于是他想到了分页。</span><br><span class="line">-- 定义初始的pageNum&#x3D;5000，通过计算得到pageSize&#x3D;60;</span><br><span class="line">-- 执行如下sql:（重点关注查询，循环只是简写，并不符合语法要求）</span><br><span class="line">i int default 0;</span><br><span class="line">	while i &lt; 60 do</span><br><span class="line">		select a,b,c,d,e,f from t limit i*5000,5000;</span><br><span class="line">    set i &#x3D; i + 1;</span><br><span class="line">  end while;</span><br><span class="line">-- A同学发现，尽管加了索引，但随着i值的增大，查询还是变的越来越慢。。。</span><br><span class="line">-- explain结果显示，查询走了b字段的索引。那为什么还是会慢呢？</span><br><span class="line">-- 答案是：</span><br><span class="line">-- mysql在执行上述查询时，要先走索引b，一行一行的回表查出a,b,c,d,e,f，然后放弃掉小于i*5000的行，这会随着i值的增大出现严重的性能问题。</span><br><span class="line">-- 优化办法：延迟关联</span><br><span class="line">select a,b,c,d,e,f from t join (select id from t limit i*5000,5000) t2 on t.id &#x3D; t2.id</span><br><span class="line">-- 由于索引树上的每个值都存在对应主键的值，不需要在回表查询，因此t2的每一行直接在索引树上就可以拿到，查询消耗很小。</span><br><span class="line">-- t2表与t表属于主键关联，优化器在计算驱动表和被驱动表时，会优先将小表做驱动表，大表做被驱动表。</span><br><span class="line">-- 优化器预估t表需要扫描至少3000000行，而t2需要扫描只有5000行。</span><br><span class="line">-- 所以选择：t2表是驱动表，t表是被驱动表</span><br><span class="line">-- 上述查询的逻辑是从t2表中取id字段，去t表中查找主键id匹配的行，直接返回结果。</span><br><span class="line">-- 每次循环共计进行一次索引树扫描，扫描t表5000行。</span><br><span class="line">-- 查询自然很快啦~~~</span><br></pre></td></tr></table></figure>
+
+
+
 
     </div>
 

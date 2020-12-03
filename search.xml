@@ -13,6 +13,18 @@
       </tags>
   </entry>
   <entry>
+    <title>（图）order by语句执行原理及优化策略</title>
+    <url>/2020/11/29/order-by%E8%AF%AD%E5%8F%A5%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/</url>
+    <content><![CDATA[<p>mysql的order by 语句执行原理以及如何优化。</p>
+<a id="more"></a>
+
+<p><img src="/2020/11/29/order-by%E8%AF%AD%E5%8F%A5%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/1.png" alt="order by是怎么工作的？"></p>
+]]></content>
+      <tags>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>为什么我建立了索引，却还是这么慢？</title>
     <url>/2020/11/30/%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E5%BB%BA%E7%AB%8B%E4%BA%86%E7%B4%A2%E5%BC%95%EF%BC%8C%E5%8D%B4%E8%BF%98%E6%98%AF%E8%BF%99%E4%B9%88%E6%85%A2%EF%BC%9F/</url>
     <content><![CDATA[<p>针对这种疑问，有以下两种情况：</p>
@@ -82,12 +94,12 @@
 </li>
 <li><p>该建立多个普通索引，还是一个联合索引？</p>
 <ul>
-<li><p>联合索引总是遵循**<font color="red">最左前缀原则</font>**：即对于联合索引union_idx_abc(a,b,c)而言：</p>
+<li><p>联合索引总是遵循<font color="red">最左前缀原则</font>：即对于联合索引union_idx_abc(a,b,c)而言：</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">select * from t where a &#x3D; &#39;123&#39;;  -- 可以使用union_idx_abc(a,b,c)</span><br></pre></td></tr></table></figure>
 
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">select * from t where b &#x3D; &#39;123&#39;;  -- 无法使用union_idx_abc(a,b,c)</span><br></pre></td></tr></table></figure>
 </li>
-<li><p>对于被联合索引覆盖的查询字段，可以直接在索引上返回结果**<font color="red">（mysql5.6引入的索引下推优化）</font> **，不需要回表查询，对于联合索引union_idx_abc(a,b,c)而言：</p>
+<li><p>对于被联合索引覆盖的查询字段，可以直接在索引上返回结果<font color="red">（mysql5.6引入的索引下推优化）</font>，不需要回表查询，对于联合索引union_idx_abc(a,b,c)而言：</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">select a,b,c from t;  -- 可以使用union_idx_abc(a,b,c)</span><br><span class="line">select a,b,c from t where a &#x3D; &#39;123&#39;;  -- 可以使用union_idx_abc(a,b,c)</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>对于被联合索引覆盖的查询字段，当在这些字段上需要排序时，可以利用索引的有序性特点，直接在索引上返回结果，不需要回表查询，对于联合索引union_idx_abc(a,b,c)而言：</p>
@@ -104,18 +116,6 @@
 <h6 id="优化ORDER-BY"><a href="#优化ORDER-BY" class="headerlink" title="优化ORDER BY"></a>优化ORDER BY</h6><p>详情请见<a href="http://www.alualu.cn/2020/11/29/order-by%E8%AF%AD%E5%8F%A5%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/#more">order by语句执行原理及优化策略</a></p>
 <h6 id="优化LIMIT"><a href="#优化LIMIT" class="headerlink" title="优化LIMIT"></a>优化LIMIT</h6><p>（未完待续）</p>
 <h6 id="UNION-还是UNION-ALL"><a href="#UNION-还是UNION-ALL" class="headerlink" title="UNION 还是UNION ALL?"></a>UNION 还是UNION ALL?</h6><p>（未完待续）</p>
-]]></content>
-      <tags>
-        <tag>mysql</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>（图）order by语句执行原理及优化策略</title>
-    <url>/2020/11/29/order-by%E8%AF%AD%E5%8F%A5%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/</url>
-    <content><![CDATA[<p>mysql的order by 语句执行原理以及如何优化。</p>
-<a id="more"></a>
-
-<p><img src="/2020/11/29/order-by%E8%AF%AD%E5%8F%A5%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/1.png" alt="order by是怎么工作的？"></p>
 ]]></content>
       <tags>
         <tag>mysql</tag>

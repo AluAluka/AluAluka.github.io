@@ -31,7 +31,7 @@
 <meta property="og:description" content="建立合适的索引什么情况下应该建立索引 首先考虑的是建立索引的成本是否可以接受：因为索引本身会占用一定的磁盘空间，如果mysql数据量特别大，建立索引，对查询的执行效率没有太大的提升，但构建索引会耗费更多的磁盘空间，还会在mysql服务器在执行DML操作时需要额外维护一次索引树，影响DML操作的执行效率，对于数据量特别大的表，建议采用分区表。  好，现在建立索引的成本可以接受了，次要考虑的是，索引列">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-12-02T14:20:54.000Z">
-<meta property="article:modified_time" content="2020-12-06T07:33:15.820Z">
+<meta property="article:modified_time" content="2020-12-06T08:36:09.701Z">
 <meta property="article:author" content="AluAlu">
 <meta property="article:tag" content="mysql">
 <meta name="twitter:card" content="summary">
@@ -199,7 +199,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <section class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%BB%BA%E7%AB%8B%E5%90%88%E9%80%82%E7%9A%84%E7%B4%A2%E5%BC%95"><span class="nav-number">1.</span> <span class="nav-text">建立合适的索引</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%83%85%E5%86%B5%E4%B8%8B%E5%BA%94%E8%AF%A5%E5%BB%BA%E7%AB%8B%E7%B4%A2%E5%BC%95"><span class="nav-number">1.1.</span> <span class="nav-text">什么情况下应该建立索引</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E8%AF%A5%E5%BB%BA%E7%AB%8B%E4%BB%80%E4%B9%88%E7%B4%A2%E5%BC%95"><span class="nav-number">1.2.</span> <span class="nav-text">该建立什么索引</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BC%98%E5%8C%96%E5%85%B3%E8%81%94%E6%9F%A5%E8%AF%A2"><span class="nav-number">1.3.</span> <span class="nav-text">优化关联查询</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BC%98%E5%8C%96%E5%AD%90%E6%9F%A5%E8%AF%A2"><span class="nav-number">1.4.</span> <span class="nav-text">优化子查询</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BC%98%E5%8C%96ORDER-BY"><span class="nav-number">1.5.</span> <span class="nav-text">优化ORDER BY</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BC%98%E5%8C%96LIMIT"><span class="nav-number">1.6.</span> <span class="nav-text">优化LIMIT</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#UNION-%E8%BF%98%E6%98%AFUNION-ALL"><span class="nav-number">1.7.</span> <span class="nav-text">UNION 还是UNION ALL?</span></a></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%BB%BA%E7%AB%8B%E5%90%88%E9%80%82%E7%9A%84%E7%B4%A2%E5%BC%95"><span class="nav-number">1.</span> <span class="nav-text">建立合适的索引</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%83%85%E5%86%B5%E4%B8%8B%E5%BA%94%E8%AF%A5%E5%BB%BA%E7%AB%8B%E7%B4%A2%E5%BC%95"><span class="nav-number">1.1.</span> <span class="nav-text">什么情况下应该建立索引</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E8%AF%A5%E5%BB%BA%E7%AB%8B%E4%BB%80%E4%B9%88%E7%B4%A2%E5%BC%95"><span class="nav-number">1.2.</span> <span class="nav-text">该建立什么索引</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BC%98%E5%8C%96%E5%85%B3%E8%81%94%E6%9F%A5%E8%AF%A2"><span class="nav-number">1.3.</span> <span class="nav-text">优化关联查询</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BC%98%E5%8C%96%E5%AD%90%E6%9F%A5%E8%AF%A2"><span class="nav-number">1.4.</span> <span class="nav-text">优化子查询</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BC%98%E5%8C%96ORDER-BY"><span class="nav-number">1.5.</span> <span class="nav-text">优化ORDER BY</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BC%98%E5%8C%96LIMIT"><span class="nav-number">1.6.</span> <span class="nav-text">优化LIMIT</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#UNION-%E8%BF%98%E6%98%AFUNION-ALL"><span class="nav-number">1.7.</span> <span class="nav-text">UNION 还是UNION ALL?</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BC%98%E5%8C%96COUNT"><span class="nav-number">1.8.</span> <span class="nav-text">优化COUNT</span></a></li></ol></li></ol></div>
         </section>
         <!--/noindex-->
 
@@ -215,7 +215,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">6</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -306,7 +306,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-12-06 15:33:15" itemprop="dateModified" datetime="2020-12-06T15:33:15+08:00">2020-12-06</time>
+        <time title="修改时间：2020-12-06 16:36:09" itemprop="dateModified" datetime="2020-12-06T16:36:09+08:00">2020-12-06</time>
       </span>
 
   
@@ -423,6 +423,24 @@
 </ul>
 </li>
 </ul>
+<h6 id="优化COUNT"><a href="#优化COUNT" class="headerlink" title="优化COUNT"></a>优化COUNT</h6><ul>
+<li>COUNT(id)，COUNT(1)，COUNT(字段)，COUNT(*)，我该选哪个？<ul>
+<li>COUNT(id)：mysql会遍历整张表，将主键id的值取出来，返回给server层，server判断不可能为空，逐行累加。</li>
+<li>COUNT(1)：server对返回的每一行数据，记录一个数字“1”进去，判断数字“1”不可能为空，逐行累加。</li>
+<li>COUNT(字段)：如果字段定义not null，mysql遍历整张表，将该字段取出来，判断该字段不可能为null，逐行累加；如果字段定义允许为null，mysql还要额外将<font color="red">字段的值</font>取出来，判断如果不是NULL才累加。</li>
+<li>COUNT(<em>)：mysql对COUNT(\</em>)做了专门的优化，*并不是取出表的所有字段，不需要取值，COUNT(*)肯定不是NULL，直接逐行累加。</li>
+</ul>
+</li>
+<li>上述4种COUNT哪个快？<ul>
+<li>按执行效率而言，COUNT(*)≈COUNT(1)&gt;COUNT(id)&gt;COUNT(字段)。</li>
+<li>如果没有特殊的业务需求，建议采用COUNT(*)。</li>
+</ul>
+</li>
+<li>我采用了COUNT(*)，但表太大还是很慢怎么办？<ul>
+<li>建议单独建立计数器表，记录表名和表记录数，执行关于被记录表的DML语句时，在同一个事务内，对该计数器表进行更新（+1 or  -1）。</li>
+</ul>
+</li>
+</ul>
 
     </div>
 
@@ -461,6 +479,9 @@
                 </a>
             </div>
             <div class="post-nav-item">
+                <a href="/2020/12/06/%E9%87%8D%E8%A6%81%E7%9A%84%E6%97%A5%E5%BF%97%E6%A8%A1%E5%9D%97%EF%BC%8Credolog%E5%92%8Cbinlog/" rel="next" title="重要的日志模块，redolog和binlog">
+                  重要的日志模块，redolog和binlog <i class="fa fa-chevron-right"></i>
+                </a>
             </div>
           </div>
     </footer>

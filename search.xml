@@ -162,6 +162,24 @@
 </ul>
 </li>
 </ul>
+<h6 id="优化COUNT"><a href="#优化COUNT" class="headerlink" title="优化COUNT"></a>优化COUNT</h6><ul>
+<li>COUNT(id)，COUNT(1)，COUNT(字段)，COUNT(*)，我该选哪个？<ul>
+<li>COUNT(id)：mysql会遍历整张表，将主键id的值取出来，返回给server层，server判断不可能为空，逐行累加。</li>
+<li>COUNT(1)：server对返回的每一行数据，记录一个数字“1”进去，判断数字“1”不可能为空，逐行累加。</li>
+<li>COUNT(字段)：如果字段定义not null，mysql遍历整张表，将该字段取出来，判断该字段不可能为null，逐行累加；如果字段定义允许为null，mysql还要额外将<font color="red">字段的值</font>取出来，判断如果不是NULL才累加。</li>
+<li>COUNT(<em>)：mysql对COUNT(\</em>)做了专门的优化，*并不是取出表的所有字段，不需要取值，COUNT(*)肯定不是NULL，直接逐行累加。</li>
+</ul>
+</li>
+<li>上述4种COUNT哪个快？<ul>
+<li>按执行效率而言，COUNT(*)≈COUNT(1)&gt;COUNT(id)&gt;COUNT(字段)。</li>
+<li>如果没有特殊的业务需求，建议采用COUNT(*)。</li>
+</ul>
+</li>
+<li>我采用了COUNT(*)，但表太大还是很慢怎么办？<ul>
+<li>建议单独建立计数器表，记录表名和表记录数，执行关于被记录表的DML语句时，在同一个事务内，对该计数器表进行更新（+1 or  -1）。</li>
+</ul>
+</li>
+</ul>
 ]]></content>
       <tags>
         <tag>mysql</tag>
@@ -178,5 +196,10 @@
       <tags>
         <tag>mysql</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>重要的日志模块，redolog和binlog</title>
+    <url>/2020/12/06/%E9%87%8D%E8%A6%81%E7%9A%84%E6%97%A5%E5%BF%97%E6%A8%A1%E5%9D%97%EF%BC%8Credolog%E5%92%8Cbinlog/</url>
+    <content><![CDATA[]]></content>
   </entry>
 </search>

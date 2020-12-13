@@ -212,14 +212,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-count">2</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -262,6 +262,144 @@
 
     
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://www.alualu.cn/2020/12/13/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%951-%E6%95%B0%E7%BB%84/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/lulu.jpg">
+      <meta itemprop="name" content="AluAlu">
+      <meta itemprop="description" content="龙岂池中物，乘雷欲上天">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AluAlu">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/13/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%951-%E6%95%B0%E7%BB%84/" class="post-title-link" itemprop="url">数据结构与算法1-数组</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-13 19:28:59 / 修改时间：20:40:47" itemprop="dateCreated datePublished" datetime="2020-12-13T19:28:59+08:00">2020-12-13</time>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/12/13/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%951-%E6%95%B0%E7%BB%84/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/12/13/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%951-%E6%95%B0%E7%BB%84/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <ul>
+<li><p>什么是数组</p>
+<ul>
+<li>数组是是一种线性表数据结构，用一组连续的内存空间来存储一组具有相同类型的数据。</li>
+</ul>
+</li>
+<li><p>数组的特点</p>
+<ul>
+<li>连续性：在内存中是必须是连续的，如果需要在内存中申请size=100M的数组，如果内存中的连续的内存空间不足100M，会申请失败。</li>
+<li>相同类型：数组中仅支持存储基本类型的数据，且一个数组只能存储一个类型的数据。</li>
+<li>查找效率：数据支持下标查找，其时间复杂度是O(1)。</li>
+</ul>
+</li>
+<li><p>为什么数组只能支持存储一种类型的数据。</p>
+<ul>
+<li><p>原因是，数组在内存中是连续的，如下图，假定1000为起始地址base_address，则数组中元素的在内存中查找公式为</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">a[i].address = base_address+i*data_type_size</span><br><span class="line"><span class="comment">//其中data_type_size为存储的数据类型所占的字节数，图例中为int，占4个字节。</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+</li>
+</ul>
+<p><img src="/2020/12/13/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%951-%E6%95%B0%E7%BB%84/%E6%95%B0%E7%BB%84-7861521.png" alt="数组"></p>
+<ul>
+<li><p>低效的插入和删除</p>
+<ul>
+<li>插入操作<ul>
+<li>假定数组长度为n，现在要插入一个数据到数组的第k个元素，则需要将k~n个元素依次顺序向后移动一位。<ul>
+<li>最坏时间复杂度：k是数组的第一个元素，在需要将数组的数据全部向后移动一位，时间复杂度为O(n)</li>
+<li>最好时间复杂度：k是数组的最后一个元素，则不需要任何数据搬移操作，直接插入，时间复杂度为O(1)。</li>
+<li>平均时间复杂度：(1+2+3+…+n)/n=O(n)。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>删除操作<ul>
+<li>跟插入操作的时间复杂度一样，不过删除操作可以优化。</li>
+<li>优化思路：CPU的标记清除垃圾回收算法。<ul>
+<li>需要删除a中的数据时，只是将a中需要删除的数据单独记录在一个独立的空间里，当数组没有更多的空间存储数据时，再将其中的内容一次性的删除，这样就减少了很多次的数据搬移操作。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>ArrayList是否能完全代替Array？</p>
+<ul>
+<li><p>在java中，ArrayList最大的优势就是将插入，删除等操作封装起来，另外，它还支持<font color="red">动态扩容</font>。</p>
+<ul>
+<li><p>动态扩容：假定初始我们定义了一个长度为10的ArrayList，当插入第11个元素时，ArrayList会自动申请一个1.5倍大小的新的ArrayList，再将当前数据copy过去，这在ArrayList数据量大时，是非常浪费时间和空间的，在预先知道要存储多少数据时，建议初始化申请就申请定长的ArrayList，如：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; dataList = <span class="keyword">new</span> ArrayList&lt;String&gt;(<span class="number">1000</span>);</span><br></pre></td></tr></table></figure>
+
+
+
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 

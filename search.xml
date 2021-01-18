@@ -192,6 +192,87 @@
 </ul>
 </li>
 </ul>
+<h6 id="EXPLAIN-详解"><a href="#EXPLAIN-详解" class="headerlink" title="EXPLAIN 详解"></a>EXPLAIN 详解</h6><ul>
+<li><p>id列：id列标记的是sql语句的执行顺序，id值越大，越优先执行，id值相同，自上而下顺序执行。</p>
+</li>
+<li><p>select_type：这一列表示explain结果集的哪一行在访问哪个表。</p>
+<ul>
+<li>simple：简单查询，整条查询语句中不包含子查询，union。</li>
+<li>primary：复杂查询的最外层select。</li>
+<li>subquery：包含在select语句中的子查询。</li>
+<li>derived：包含在from语句中的子查询，以derivedN（derived+id字段）展示。</li>
+<li>union：在union中的第二个和随后的查询</li>
+</ul>
+</li>
+<li><p>type列：这一列表示关联类型或者访问类型：性能依次从最优到最差分别为system&gt;const&gt;eq_ref_ref&gt;range&gt;index&gt;ALL。一般来说得保证查询优化到range级别，最好能到eq_ref。</p>
+<ul>
+<li><p>NULL：mysql能够在优化阶段分解查询语句，确定出查询不需要访问任何索引或表。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">-- id是主键</span><br><span class="line">explain select min(id) from actor;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>const：mysql能对查询进行优化，使之成为一个常量，用于访问primary key 和 unique key的列，或者将该列与常数进行比较时。</p>
+</li>
+<li><p>system：根据primary key 或者 unique key查询的表或者结果集中只有一行记录。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">-- id是主键</span><br><span class="line">EXPLAIN select * from (SELECT * FROM actor WHERE id &#x3D; 2) t;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>eq_ ref：primary key 或者unique key 被当做连接条件使用，所以只返回一条记录，这是除const之外最好的连接类型了。</p>
+</li>
+<li><p>ref：相比eq_ref，此连接类型用normal key 或者（unique key、union key） 的部分前缀当做连接条件，所以返回可能有多行。</p>
+</li>
+<li><p>range：范围扫描，通常出现在in()，between and，&gt;，&lt;，&gt;=，&lt;=等操作中，使用一个索引来检索指定范围的行。</p>
+</li>
+<li><p>index：从索引上能直接返回结果，一般是扫描某个二级索引，这种扫描不会从跟节点开始扫描，而是直接对二级索引的所有叶子节点进行扫描，速度还是比较慢的，这个查询一般是使用了覆盖索引，但通常情况下二级索引比较小，所以这种类型比ALL更快些。</p>
+</li>
+<li><p>ALL：即全表扫描，一般是扫描聚簇索引的所有叶子节点，出现这个类型一般情况下，你的sql该优化了。</p>
+</li>
+</ul>
+</li>
+<li><p>possible_keys：mysql预估可能要使用的索引名称。</p>
+</li>
+<li><p>key：mysql实际使用的索引名称</p>
+</li>
+<li><p>key_len：使用索引的长度，可以使用此字段来确定，使用了联合索引的哪些字段。</p>
+<ul>
+<li>计算规则如下：<ul>
+<li>字符串：<ul>
+<li>char(n) ：n字节长度</li>
+<li>varchar(n)：如果是utf8 则长度是3n+2字节。加的两字节是用来存储字符串的实际长度。</li>
+</ul>
+</li>
+<li>数值类型：<ul>
+<li>tinyint：1字节</li>
+<li>smallint：2字节</li>
+<li>int：4字节</li>
+<li>bigint：8字节</li>
+</ul>
+</li>
+<li>时间类型：<ul>
+<li>date：3字节</li>
+<li>timestamp：4字节</li>
+<li>datetime：8字节</li>
+</ul>
+</li>
+<li>如果字段允许为NULL，则另外需要一个字节来记录该字段是否为NULL</li>
+</ul>
+</li>
+<li>mysql索引的最大长度是768，当字符串过长时，mysql会做一个类似左前缀索引的处理，将前半部分的字符串提取出来做索引。</li>
+</ul>
+</li>
+<li><p>ref：表示索引字段匹配的是常量还是其他表的字段，常见的值有const，或者（db.table.field）。</p>
+</li>
+<li><p>rows：mysql预估查询扫描的行数，这个值不精确。</p>
+</li>
+<li><p>extra列：</p>
+<ul>
+<li>Using index：查询的结果字段使用了覆盖索引。</li>
+<li>Using index condition：查询列不被索引完全覆盖且where条件中是索引的前缀。</li>
+<li>Using where：查询字段没有使用到索引。</li>
+<li>Using where Using index：查询的结果字段使用了覆盖索引，但是where条件中字段没有使用到索引。</li>
+<li>Using filesort： 使用了文件排序，mysql在认为需要排序字段+查询列的列定义长度小于max_length_for_sort_data时，默认采取全字段排序，如果data_size&gt;sort_buffer_size（默认2M），mysql将结果集分为n个文件，对每个文件进行排序，再将这n个有序的小文件合并成一个有序的大文件，返回结果集。</li>
+<li>Using tempory：查询使用到了临时表，一般出现在union、distinct语句，一般是由于union、distinct的字段没有使用到索引导致的，优化思路是建立合适的索引，使之变为Using index。</li>
+<li>Select tables optimized away：使用某些聚合函数来访问存在索引的某个字段，一般不需要优化。</li>
+</ul>
+</li>
+</ul>
 ]]></content>
       <tags>
         <tag>mysql</tag>

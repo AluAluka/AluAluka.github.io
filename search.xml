@@ -1,24 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>jvm对象创建与内存分配机制分析</title>
+    <url>/2021/02/23/jvm%E5%AF%B9%E8%B1%A1%E5%88%9B%E5%BB%BA%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E6%9C%BA%E5%88%B6%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<h5 id="jvm对象创建过程"><a href="#jvm对象创建过程" class="headerlink" title="jvm对象创建过程"></a>jvm对象创建过程</h5><ul>
+<li>类加载检查<ul>
+<li>当java虚拟机执行到字节码遇到new关键字时，首先检查该关键字对应的参数是否在常量池中存在类的符号引用（即类的全路径名称）并且检查该类是否被类加载器加载过，如果没有，则需要执行类加载过程。</li>
+</ul>
+</li>
+<li>分配内存<ul>
+<li>方式<ul>
+<li>指针碰撞：假定当前jvm的内存区域是规整的，则内存分配的方式是将指针由非空闲区域向空闲区域移动对象所占内存大小的距离。</li>
+<li>空闲列表：如果当前jvm内存区域是不规整的，则jvm会维护一张表，用于记录实际的内存分配情况，从内存中找出一块足够大的区域，分配给该对象。</li>
+</ul>
+</li>
+<li>并发问题<ul>
+<li>CAS(Compare and Swap)失败重试：虚拟机采用CAS保证对象分配和更新操作的原子性。</li>
+<li>本地线程分配缓冲：为每个线程分配指定步长的地址空间，用于线程内部的对象分配。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>初始化<ul>
+<li>将对象中的数据类型都初始化为0值。</li>
+</ul>
+</li>
+<li>设置对象头<ul>
+<li>对象头的信息包含，这个对象是哪个类的实例，如何找到该对象的类的元数据信息（在方法区），以及对象的GC分代年龄等。</li>
+</ul>
+</li>
+<li>调用Class.init() 根据传入的参数给对象赋值。</li>
+<li>在栈中创建该对象的引用，指向堆区的实例。</li>
+</ul>
+<h5 id="对象内存分配"><a href="#对象内存分配" class="headerlink" title="对象内存分配"></a>对象内存分配</h5><p>一般情况下对象是直接分配在堆区的。</p>
+<ul>
+<li><p>栈上分配？</p>
+<ul>
+<li><p>逃逸分析：jvm会对方法内部的对象做逃逸分析，如果方法中的对象作用范围仅在当前方法中且对象大小合适（jvm分析栈帧中可以放的下），则该对象是优先存放在栈中的。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">//栈上分配示例，不逃逸</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testMethod</span><span class="params">()</span></span>&#123;</span><br><span class="line">  User user = <span class="keyword">new</span> User();</span><br><span class="line">  user.setName(<span class="string">&quot;lulu&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//堆区分配，逃逸</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> User <span class="title">testMethod</span><span class="params">()</span></span>&#123;</span><br><span class="line">  User user = <span class="keyword">new</span> User();</span><br><span class="line">  user.setName(<span class="string">&quot;lulu&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> user;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>标量替换：对象在栈上分配时，会将该对象的成员变量分解成方法的局部变量供此方法使用。</p>
+</li>
+</ul>
+</li>
+<li><p>堆区分配</p>
+<ul>
+<li>Eden区：大多数情况下，对象是直接分配在Eden区，当Eden区不够放时，会触发一次minor GC，扫描Eden区和非空的survivor区。通过可达性分析算法，判断当前对象是否可以被回收，然后将两者中不可回收的对象放到一块为空的survivor区，并将其GC分代年龄+1，然后将标记的垃圾对象干掉。</li>
+<li>老年代：<ul>
+<li>大对象直接进入老年代。</li>
+<li>长期存活的对象进入老年代。</li>
+<li>对象的动态年龄判断：<ul>
+<li>触发minor GC时，jvm在将不可回收的对象（年龄1+…+年龄n）放到一块为空的survivor区前，会判断这些对象是否大于survivor区的50%，如果大于，则大于年龄n的对象会直接进入老年代。</li>
+</ul>
+</li>
+<li>老年代空间分配担保机制。<ul>
+<li>年轻代每次minior GC之前jvm都会计算老年代的剩余空间，如果可用空间大于年轻代里所有对象大小之和，则正常触发minior GC，反之触发full GC，将老年代和年轻代一起回收，如果触发full GC之后还是没有足够的空间存放新的对象，则会抛出OOM异常。</li>
+<li>如果触发完minior GC后老年代还是放不下年轻代的所有对象，依旧会触发full GC，full gc完之后如果还是没有空间放minor gc之后的存活对象，则也会发生“OOM”。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+]]></content>
+  </entry>
+  <entry>
     <title>（图）JOIN语句是怎么执行的</title>
     <url>/2020/11/29/JOIN%E8%AF%AD%E5%8F%A5%E6%98%AF%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C%E7%9A%84/</url>
     <content><![CDATA[<p>一图读懂mysql JOIN语句的执行流程和优化策略。</p>
 <a id="more"></a>
 
 <p><img src="/2020/11/29/JOIN%E8%AF%AD%E5%8F%A5%E6%98%AF%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C%E7%9A%84/JOIN%E8%AF%AD%E5%8F%A5%E6%98%AF%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C%E7%9A%84.png" alt="JOIN语句是怎么执行的"></p>
-]]></content>
-      <tags>
-        <tag>mysql</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>（图）order by语句执行原理及优化策略</title>
-    <url>/2020/11/29/order-by%E8%AF%AD%E5%8F%A5%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/</url>
-    <content><![CDATA[<p>mysql的order by 语句执行原理以及如何优化。</p>
-<a id="more"></a>
-
-<p><img src="/2020/11/29/order-by%E8%AF%AD%E5%8F%A5%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/1.png" alt="order by是怎么工作的？"></p>
 ]]></content>
       <tags>
         <tag>mysql</tag>
@@ -77,6 +130,18 @@
       </tags>
   </entry>
   <entry>
+    <title>（图）order by语句执行原理及优化策略</title>
+    <url>/2020/11/29/order-by%E8%AF%AD%E5%8F%A5%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/</url>
+    <content><![CDATA[<p>mysql的order by 语句执行原理以及如何优化。</p>
+<a id="more"></a>
+
+<p><img src="/2020/11/29/order-by%E8%AF%AD%E5%8F%A5%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/1.png" alt="order by是怎么工作的？"></p>
+]]></content>
+      <tags>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>从JDK源码级别剖析类加载过程-笔记</title>
     <url>/2021/01/20/%E4%BB%8EJDK%E6%BA%90%E7%A0%81%E7%BA%A7%E5%88%AB%E5%89%96%E6%9E%90%E7%B1%BB%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B-%E7%AC%94%E8%AE%B0/</url>
     <content><![CDATA[<h5 id="类加载步骤"><a href="#类加载步骤" class="headerlink" title="类加载步骤"></a>类加载步骤</h5><ul>
@@ -113,6 +178,73 @@
 <h5 id="实现自定义的类加载器并打破双亲委派机制"><a href="#实现自定义的类加载器并打破双亲委派机制" class="headerlink" title="实现自定义的类加载器并打破双亲委派机制"></a>实现自定义的类加载器并打破双亲委派机制</h5><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> day01;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.io.File;</span><br><span class="line"><span class="keyword">import</span> java.io.FileInputStream;</span><br><span class="line"><span class="keyword">import</span> java.lang.reflect.Method;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 自定义类加载器</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CustomClassLoaderTest</span></span>&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">CustomClassLoader</span> <span class="keyword">extends</span> <span class="title">ClassLoader</span></span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="keyword">private</span> String classPath;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">CustomClassLoader</span><span class="params">(String classPath)</span></span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.classPath = classPath;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 将类文件以字节码的形式读入内存</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@param</span> packagePath</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">byte</span>[] loadData(String packagePath)&#123;</span><br><span class="line">            packagePath = packagePath.replaceAll(<span class="string">&quot;\\.&quot;</span>,<span class="string">&quot;/&quot;</span>);</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                FileInputStream fis = <span class="keyword">new</span> FileInputStream(<span class="keyword">new</span> File(<span class="keyword">this</span>.classPath+File.separator+packagePath+<span class="string">&quot;.class&quot;</span>));</span><br><span class="line">                <span class="keyword">byte</span>[] array = <span class="keyword">new</span> <span class="keyword">byte</span>[fis.available()];</span><br><span class="line">                fis.read(array);</span><br><span class="line">                fis.close();</span><br><span class="line">                <span class="keyword">return</span> array;</span><br><span class="line">            &#125;<span class="keyword">catch</span> (Exception e)&#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 自定义类加载器-继承ClassLoader类实现findClass方法</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">protected</span> Class&lt;?&gt; findClass(String packagePath) <span class="keyword">throws</span> ClassNotFoundException &#123;</span><br><span class="line">            <span class="keyword">byte</span>[] array = loadData(packagePath);</span><br><span class="line">            <span class="keyword">if</span>(array != <span class="keyword">null</span>)&#123;</span><br><span class="line">                <span class="keyword">return</span> defineClass(packagePath, array, <span class="number">0</span>, array.length);</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ClassNotFoundException();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 实现loadClass方法-打破双亲委派机制</span></span><br><span class="line"><span class="comment">         * 为什么要打破双亲委派机制？哪里使用到了双亲委派机制</span></span><br><span class="line"><span class="comment">         * Tomcat打破了双亲委派机制，就是为了满足不同war加载spring版本不同时，实现war包之间类文件的隔离性</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">protected</span> Class&lt;?&gt; loadClass(String name, <span class="keyword">boolean</span> resolve)</span><br><span class="line">                <span class="keyword">throws</span> ClassNotFoundException</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (getClassLoadingLock(name)) &#123;</span><br><span class="line">                <span class="comment">// First, check if the class has already been loaded</span></span><br><span class="line">                Class&lt;?&gt; c = findLoadedClass(name);</span><br><span class="line">                <span class="keyword">if</span> (c == <span class="keyword">null</span>) &#123;</span><br><span class="line">                    <span class="keyword">long</span> t0 = System.nanoTime();</span><br><span class="line">                    <span class="comment">//jdk8双亲委派机制源码</span></span><br><span class="line"><span class="comment">//                    try &#123;</span></span><br><span class="line"><span class="comment">//                        //判断自己是否存在父类加载器</span></span><br><span class="line"><span class="comment">//                        if (parent != null) &#123;</span></span><br><span class="line"><span class="comment">//                            c = parent.loadClass(name, false);</span></span><br><span class="line"><span class="comment">//                        &#125; else &#123;</span></span><br><span class="line"><span class="comment">//                            //到达顶级，引导类加载器</span></span><br><span class="line"><span class="comment">//                            c = findBootstrapClassOrNull(name);</span></span><br><span class="line"><span class="comment">//                        &#125;</span></span><br><span class="line"><span class="comment">//                    &#125; catch (ClassNotFoundException e) &#123;</span></span><br><span class="line"><span class="comment">//                        // ClassNotFoundException thrown if class not found</span></span><br><span class="line"><span class="comment">//                        // from the non-null parent class loader</span></span><br><span class="line"><span class="comment">//                    &#125;</span></span><br><span class="line"></span><br><span class="line">                        <span class="comment">// If still not found, then invoke findClass in order</span></span><br><span class="line">                        <span class="comment">// to find the class.</span></span><br><span class="line">                        <span class="keyword">long</span> t1 = System.nanoTime();</span><br><span class="line">                        <span class="keyword">if</span>(name.startsWith(<span class="string">&quot;day01&quot;</span>))&#123;</span><br><span class="line">                            c = findClass(name);</span><br><span class="line">                        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                            c = <span class="keyword">this</span>.getParent().loadClass(name);</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="comment">// this is the defining class loader; record the stats</span></span><br><span class="line">                        sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);</span><br><span class="line">                        sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);</span><br><span class="line">                        sun.misc.PerfCounter.getFindClasses().increment();</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (resolve) &#123;</span><br><span class="line">                    resolveClass(c);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">return</span> c;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">            CustomClassLoader customClassLoader = <span class="keyword">new</span> CustomClassLoader(<span class="string">&quot;/Users/alualu/Desktop/learning&quot;</span>);</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line"><span class="comment">//            Class clazz = customClassLoader.findClass(&quot;day01.User&quot;);</span></span><br><span class="line">                Class clazz = customClassLoader.loadClass(<span class="string">&quot;day01.User&quot;</span>);</span><br><span class="line"></span><br><span class="line">                Object obj = clazz.newInstance();</span><br><span class="line">                Method method = clazz.getDeclaredMethod(<span class="string">&quot;test&quot;</span>,<span class="keyword">null</span>);</span><br><span class="line">                method.invoke(obj);</span><br><span class="line">                System.out.println(clazz.getClassLoader().getClass().getName());</span><br><span class="line">            &#125;<span class="keyword">catch</span> (Exception e)&#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
       <tags>
         <tag>java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>数据结构和算法-数组</title>
+    <url>/2020/12/13/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95-%E6%95%B0%E7%BB%84/</url>
+    <content><![CDATA[<a id="more"></a>
+
+<h6 id="数组的数据结构"><a href="#数组的数据结构" class="headerlink" title="数组的数据结构"></a>数组的数据结构</h6><ul>
+<li><p>数组是是一种线性表数据结构，用一组连续的内存空间来存储一组具有相同类型的数据。</p>
+</li>
+<li><p>数组的特点</p>
+<ul>
+<li>连续性：在内存中是必须是连续的，如果需要在内存中申请size=100M的数组，如果内存中的连续的内存空间不足100M，会申请失败。</li>
+<li>相同类型：数组中仅支持存储基本类型的数据，且一个数组只能存储一个类型的数据。</li>
+<li>查找效率：数据支持下标查找，其时间复杂度是O(1)。</li>
+</ul>
+</li>
+<li><p>为什么数组只能支持存储一种类型的数据。</p>
+<ul>
+<li><p>原因是，数组在内存中是连续的，需要按固定的数据类型字节数来查找其在内存中的数据。如下图，假定起始地址base_address=1000，则数组中元素的在内存中查找公式为：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">a[i].address = base_address+i*data_type_size</span><br><span class="line"><span class="comment">//其中data_type_size为存储的数据类型所占的字节数，图例中为int，占4个字节。</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+</li>
+</ul>
+<p><img src="/2020/12/13/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95-%E6%95%B0%E7%BB%84/%E6%95%B0%E7%BB%84-7861521.png" alt="数组"></p>
+<ul>
+<li><p>低效的插入和删除</p>
+<ul>
+<li>插入操作<ul>
+<li>假定数组长度为n，现在要插入一个数据到数组的第k个元素，则需要将k~n个元素依次顺序向后移动一位。<ul>
+<li>最坏时间复杂度：k是数组的第一个元素，在需要将数组的数据全部向后移动一位，时间复杂度为O(n)</li>
+<li>最好时间复杂度：k是数组的最后一个元素，则不需要任何数据搬移操作，直接插入，时间复杂度为O(1)。</li>
+<li>平均时间复杂度：(1+2+3+…+n)/n=O(n)。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>删除操作<ul>
+<li>跟插入操作的时间复杂度一样，不过删除操作可以优化。</li>
+<li>优化思路：CPU的标记清除垃圾回收算法。<ul>
+<li>需要删除a中的数据时，只是将a中需要删除的数据单独记录在一个独立的空间里，当数组没有更多的空间存储数据时，再将其中的内容一次性的删除，这样就减少了很多次的数据搬移操作。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>ArrayList是否能完全代替Array？</p>
+<ul>
+<li><p>在java中，ArrayList最大的优势就是将插入，删除等操作封装起来，另外，它还支持<font color="red">动态扩容</font>。</p>
+<ul>
+<li><p>动态扩容：假定初始我们定义了一个长度为10的ArrayList，当插入第11个元素时，ArrayList会自动申请一个1.5倍大小的新的ArrayList，再将当前数据copy过去，这在ArrayList数据量大时，是非常浪费时间和空间的，在预先知道要存储多少数据时，建议初始化申请就申请定长的ArrayList，如：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">List&lt;String&gt; dataList = <span class="keyword">new</span> ArrayList&lt;String&gt;(<span class="number">1000</span>);</span><br></pre></td></tr></table></figure>
+
+
+
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+]]></content>
+      <tags>
+        <tag>数据结构和算法</tag>
       </tags>
   </entry>
   <entry>
@@ -318,73 +450,6 @@
       </tags>
   </entry>
   <entry>
-    <title>数据结构和算法-数组</title>
-    <url>/2020/12/13/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95-%E6%95%B0%E7%BB%84/</url>
-    <content><![CDATA[<a id="more"></a>
-
-<h6 id="数组的数据结构"><a href="#数组的数据结构" class="headerlink" title="数组的数据结构"></a>数组的数据结构</h6><ul>
-<li><p>数组是是一种线性表数据结构，用一组连续的内存空间来存储一组具有相同类型的数据。</p>
-</li>
-<li><p>数组的特点</p>
-<ul>
-<li>连续性：在内存中是必须是连续的，如果需要在内存中申请size=100M的数组，如果内存中的连续的内存空间不足100M，会申请失败。</li>
-<li>相同类型：数组中仅支持存储基本类型的数据，且一个数组只能存储一个类型的数据。</li>
-<li>查找效率：数据支持下标查找，其时间复杂度是O(1)。</li>
-</ul>
-</li>
-<li><p>为什么数组只能支持存储一种类型的数据。</p>
-<ul>
-<li><p>原因是，数组在内存中是连续的，需要按固定的数据类型字节数来查找其在内存中的数据。如下图，假定起始地址base_address=1000，则数组中元素的在内存中查找公式为：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">a[i].address = base_address+i*data_type_size</span><br><span class="line"><span class="comment">//其中data_type_size为存储的数据类型所占的字节数，图例中为int，占4个字节。</span></span><br></pre></td></tr></table></figure>
-
-</li>
-</ul>
-</li>
-</ul>
-<p><img src="/2020/12/13/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95-%E6%95%B0%E7%BB%84/%E6%95%B0%E7%BB%84-7861521.png" alt="数组"></p>
-<ul>
-<li><p>低效的插入和删除</p>
-<ul>
-<li>插入操作<ul>
-<li>假定数组长度为n，现在要插入一个数据到数组的第k个元素，则需要将k~n个元素依次顺序向后移动一位。<ul>
-<li>最坏时间复杂度：k是数组的第一个元素，在需要将数组的数据全部向后移动一位，时间复杂度为O(n)</li>
-<li>最好时间复杂度：k是数组的最后一个元素，则不需要任何数据搬移操作，直接插入，时间复杂度为O(1)。</li>
-<li>平均时间复杂度：(1+2+3+…+n)/n=O(n)。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>删除操作<ul>
-<li>跟插入操作的时间复杂度一样，不过删除操作可以优化。</li>
-<li>优化思路：CPU的标记清除垃圾回收算法。<ul>
-<li>需要删除a中的数据时，只是将a中需要删除的数据单独记录在一个独立的空间里，当数组没有更多的空间存储数据时，再将其中的内容一次性的删除，这样就减少了很多次的数据搬移操作。</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>ArrayList是否能完全代替Array？</p>
-<ul>
-<li><p>在java中，ArrayList最大的优势就是将插入，删除等操作封装起来，另外，它还支持<font color="red">动态扩容</font>。</p>
-<ul>
-<li><p>动态扩容：假定初始我们定义了一个长度为10的ArrayList，当插入第11个元素时，ArrayList会自动申请一个1.5倍大小的新的ArrayList，再将当前数据copy过去，这在ArrayList数据量大时，是非常浪费时间和空间的，在预先知道要存储多少数据时，建议初始化申请就申请定长的ArrayList，如：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">List&lt;String&gt; dataList = <span class="keyword">new</span> ArrayList&lt;String&gt;(<span class="number">1000</span>);</span><br></pre></td></tr></table></figure>
-
-
-
-</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-]]></content>
-      <tags>
-        <tag>数据结构和算法</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>数据结构与算法-排序</title>
     <url>/2020/12/30/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95-%E6%8E%92%E5%BA%8F/</url>
     <content><![CDATA[<h5 id="冒泡排序"><a href="#冒泡排序" class="headerlink" title="冒泡排序"></a>冒泡排序</h5><ul>
@@ -428,37 +493,6 @@
 ]]></content>
       <tags>
         <tag>java</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>深入理解MVCC和BufferPool缓存机制</title>
-    <url>/2021/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3MVCC%E5%92%8CBufferPool%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6/</url>
-    <content><![CDATA[<h5 id="mysql的隔离级别"><a href="#mysql的隔离级别" class="headerlink" title="mysql的隔离级别"></a>mysql的隔离级别</h5><ul>
-<li>读未提交：一个事务在未提交时，他所作的变更被其他事务查询到。</li>
-<li>读提交：一个事务提交之后，他所作的变更被其他事物查询到。</li>
-<li>可重复读：一个事务在执行过程中看到的数据，总是跟这个事务刚启动时看到的数据是一致的。</li>
-<li>串行化：对于同一行记录，读会加读锁，写会加写锁，将所有并发执行的事务串行化。</li>
-</ul>
-<h5 id="MVCC机制"><a href="#MVCC机制" class="headerlink" title="MVCC机制"></a>MVCC机制</h5><p>多版本并发控制：mysql在可重复读隔离级别下保证隔离性就是通过MVCC(multi-version concurrency control)机制来实现的。</p>
-<ul>
-<li>undo log：回滚日志，mysql在更新一条记录时，会将原数据记录到undo log中，事务回滚时，读取undo log中的数据，实现回滚。</li>
-</ul>
-<h5 id="BUFFER-POOL"><a href="#BUFFER-POOL" class="headerlink" title="BUFFER POOL"></a>BUFFER POOL</h5><p>一条更新语句执行流程：update t set name =’lulu’ where id =2;</p>
-<p>server层略过</p>
-<ol>
-<li>先将id为2的行取出，放到Buffer Pool中</li>
-<li>将原始值记录到undo log</li>
-<li>更新Buffer Pool</li>
-<li>写 redo log Buffer。</li>
-<li>准备提交事务。</li>
-<li>写redo log  prepared</li>
-<li>写bin log</li>
-<li>写一个commit的标记到redo log</li>
-<li>事务提交</li>
-</ol>
-]]></content>
-      <tags>
-        <tag>mysql</tag>
       </tags>
   </entry>
   <entry>
@@ -641,6 +675,37 @@
 </ul>
 </li>
 </ul>
+]]></content>
+      <tags>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>深入理解MVCC和BufferPool缓存机制</title>
+    <url>/2021/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3MVCC%E5%92%8CBufferPool%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6/</url>
+    <content><![CDATA[<h5 id="mysql的隔离级别"><a href="#mysql的隔离级别" class="headerlink" title="mysql的隔离级别"></a>mysql的隔离级别</h5><ul>
+<li>读未提交：一个事务在未提交时，他所作的变更被其他事务查询到。</li>
+<li>读提交：一个事务提交之后，他所作的变更被其他事物查询到。</li>
+<li>可重复读：一个事务在执行过程中看到的数据，总是跟这个事务刚启动时看到的数据是一致的。</li>
+<li>串行化：对于同一行记录，读会加读锁，写会加写锁，将所有并发执行的事务串行化。</li>
+</ul>
+<h5 id="MVCC机制"><a href="#MVCC机制" class="headerlink" title="MVCC机制"></a>MVCC机制</h5><p>多版本并发控制：mysql在可重复读隔离级别下保证隔离性就是通过MVCC(multi-version concurrency control)机制来实现的。</p>
+<ul>
+<li>undo log：回滚日志，mysql在更新一条记录时，会将原数据记录到undo log中，事务回滚时，读取undo log中的数据，实现回滚。</li>
+</ul>
+<h5 id="BUFFER-POOL"><a href="#BUFFER-POOL" class="headerlink" title="BUFFER POOL"></a>BUFFER POOL</h5><p>一条更新语句执行流程：update t set name =’lulu’ where id =2;</p>
+<p>server层略过</p>
+<ol>
+<li>先将id为2的行取出，放到Buffer Pool中</li>
+<li>将原始值记录到undo log</li>
+<li>更新Buffer Pool</li>
+<li>写 redo log Buffer。</li>
+<li>准备提交事务。</li>
+<li>写redo log  prepared</li>
+<li>写bin log</li>
+<li>写一个commit的标记到redo log</li>
+<li>事务提交</li>
+</ol>
 ]]></content>
       <tags>
         <tag>mysql</tag>

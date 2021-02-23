@@ -212,7 +212,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-count">12</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -262,6 +262,144 @@
 
     
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://www.alualu.cn/2021/02/23/jvm%E5%AF%B9%E8%B1%A1%E5%88%9B%E5%BB%BA%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E6%9C%BA%E5%88%B6%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/lulu.jpg">
+      <meta itemprop="name" content="AluAlu">
+      <meta itemprop="description" content="龙岂池中物，乘雷欲上天">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AluAlu">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/02/23/jvm%E5%AF%B9%E8%B1%A1%E5%88%9B%E5%BB%BA%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E6%9C%BA%E5%88%B6%E5%88%86%E6%9E%90/" class="post-title-link" itemprop="url">jvm对象创建与内存分配机制分析</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2021-02-23 19:47:34 / 修改时间：23:06:42" itemprop="dateCreated datePublished" datetime="2021-02-23T19:47:34+08:00">2021-02-23</time>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/02/23/jvm%E5%AF%B9%E8%B1%A1%E5%88%9B%E5%BB%BA%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E6%9C%BA%E5%88%B6%E5%88%86%E6%9E%90/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/02/23/jvm%E5%AF%B9%E8%B1%A1%E5%88%9B%E5%BB%BA%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E6%9C%BA%E5%88%B6%E5%88%86%E6%9E%90/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h5 id="jvm对象创建过程"><a href="#jvm对象创建过程" class="headerlink" title="jvm对象创建过程"></a>jvm对象创建过程</h5><ul>
+<li>类加载检查<ul>
+<li>当java虚拟机执行到字节码遇到new关键字时，首先检查该关键字对应的参数是否在常量池中存在类的符号引用（即类的全路径名称）并且检查该类是否被类加载器加载过，如果没有，则需要执行类加载过程。</li>
+</ul>
+</li>
+<li>分配内存<ul>
+<li>方式<ul>
+<li>指针碰撞：假定当前jvm的内存区域是规整的，则内存分配的方式是将指针由非空闲区域向空闲区域移动对象所占内存大小的距离。</li>
+<li>空闲列表：如果当前jvm内存区域是不规整的，则jvm会维护一张表，用于记录实际的内存分配情况，从内存中找出一块足够大的区域，分配给该对象。</li>
+</ul>
+</li>
+<li>并发问题<ul>
+<li>CAS(Compare and Swap)失败重试：虚拟机采用CAS保证对象分配和更新操作的原子性。</li>
+<li>本地线程分配缓冲：为每个线程分配指定步长的地址空间，用于线程内部的对象分配。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>初始化<ul>
+<li>将对象中的数据类型都初始化为0值。</li>
+</ul>
+</li>
+<li>设置对象头<ul>
+<li>对象头的信息包含，这个对象是哪个类的实例，如何找到该对象的类的元数据信息（在方法区），以及对象的GC分代年龄等。</li>
+</ul>
+</li>
+<li>调用Class.init() 根据传入的参数给对象赋值。</li>
+<li>在栈中创建该对象的引用，指向堆区的实例。</li>
+</ul>
+<h5 id="对象内存分配"><a href="#对象内存分配" class="headerlink" title="对象内存分配"></a>对象内存分配</h5><p>一般情况下对象是直接分配在堆区的。</p>
+<ul>
+<li><p>栈上分配？</p>
+<ul>
+<li><p>逃逸分析：jvm会对方法内部的对象做逃逸分析，如果方法中的对象作用范围仅在当前方法中且对象大小合适（jvm分析栈帧中可以放的下），则该对象是优先存放在栈中的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//栈上分配示例，不逃逸</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testMethod</span><span class="params">()</span></span>&#123;</span><br><span class="line">  User user = <span class="keyword">new</span> User();</span><br><span class="line">  user.setName(<span class="string">&quot;lulu&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//堆区分配，逃逸</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> User <span class="title">testMethod</span><span class="params">()</span></span>&#123;</span><br><span class="line">  User user = <span class="keyword">new</span> User();</span><br><span class="line">  user.setName(<span class="string">&quot;lulu&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> user;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>标量替换：对象在栈上分配时，会将该对象的成员变量分解成方法的局部变量供此方法使用。</p>
+</li>
+</ul>
+</li>
+<li><p>堆区分配</p>
+<ul>
+<li>Eden区：大多数情况下，对象是直接分配在Eden区，当Eden区不够放时，会触发一次minor GC，扫描Eden区和非空的survivor区。通过可达性分析算法，判断当前对象是否可以被回收，然后将两者中不可回收的对象放到一块为空的survivor区，并将其GC分代年龄+1，然后将标记的垃圾对象干掉。</li>
+<li>老年代：<ul>
+<li>大对象直接进入老年代。</li>
+<li>长期存活的对象进入老年代。</li>
+<li>对象的动态年龄判断：<ul>
+<li>触发minor GC时，jvm在将不可回收的对象（年龄1+…+年龄n）放到一块为空的survivor区前，会判断这些对象是否大于survivor区的50%，如果大于，则大于年龄n的对象会直接进入老年代。</li>
+</ul>
+</li>
+<li>老年代空间分配担保机制。<ul>
+<li>年轻代每次minior GC之前jvm都会计算老年代的剩余空间，如果可用空间大于年轻代里所有对象大小之和，则正常触发minior GC，反之触发full GC，将老年代和年轻代一起回收，如果触发full GC之后还是没有足够的空间存放新的对象，则会抛出OOM异常。</li>
+<li>如果触发完minior GC后老年代还是放不下年轻代的所有对象，依旧会触发full GC，full gc完之后如果还是没有空间放minor gc之后的存活对象，则也会发生“OOM”。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1201,98 +1339,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/11/29/order-by%E8%AF%AD%E5%8F%A5%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://www.alualu.cn/2020/11/29/JOIN%E8%AF%AD%E5%8F%A5%E6%98%AF%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C%E7%9A%84/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/lulu.jpg">
-      <meta itemprop="name" content="AluAlu">
-      <meta itemprop="description" content="龙岂池中物，乘雷欲上天">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="AluAlu">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/11/29/JOIN%E8%AF%AD%E5%8F%A5%E6%98%AF%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C%E7%9A%84/" class="post-title-link" itemprop="url">（图）JOIN语句是怎么执行的</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2020-11-29 19:29:06" itemprop="dateCreated datePublished" datetime="2020-11-29T19:29:06+08:00">2020-11-29</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-11-30 21:38:29" itemprop="dateModified" datetime="2020-11-30T21:38:29+08:00">2020-11-30</time>
-      </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2020/11/29/JOIN%E8%AF%AD%E5%8F%A5%E6%98%AF%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C%E7%9A%84/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2020/11/29/JOIN%E8%AF%AD%E5%8F%A5%E6%98%AF%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C%E7%9A%84/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>一图读懂mysql JOIN语句的执行流程和优化策略。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/11/29/JOIN%E8%AF%AD%E5%8F%A5%E6%98%AF%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C%E7%9A%84/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
